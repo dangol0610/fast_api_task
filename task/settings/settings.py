@@ -9,10 +9,10 @@ class Settings(BaseSettings):
     DB_PASS: str = Field(default="password")
     DB_NAME: str = Field(default="database")
 
-    SECRET_KEY: str = "SECRET"
+    SECRET_KEY: str = Field(default="")
     ALG: str = "HS256"
 
-    model_config = SettingsConfigDict(env_file="task.env")
+    model_config = SettingsConfigDict(env_file="task/.env")
 
     @property
     def db_url(self) -> str:
