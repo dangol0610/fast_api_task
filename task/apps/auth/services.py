@@ -54,17 +54,13 @@ class AuthService:
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
             )
 
-    def register(self, data: AuthRegisterSchema):
+    async def register(self, data: AuthRegisterSchema):
         data.password = self.hash_password(data.password)
-        return self.repository.register_user(data)
+        return await self.repository.register_user(data)
 
-    def login(self, username: str, password: str):
-        user = self.repository.get_by_username(username)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
-            )
-        if not self.verify_password(password, user.password):
+    async def login(self, username: str, password: str):
+        user = await self.repository.get_by_username(username)
+        if not user or not self.verify_password(password, user.hashed_password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
             )

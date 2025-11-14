@@ -1,71 +1,51 @@
-from fastapi import HTTPException, status
+from task.apps.auth.services import AuthService
 from task.apps.users.repository import UserRepository
-from task.apps.users.schemas import (
-    UserCreateSchema,
-    UserFullSchema,
-    UserReadSchema,
-    UserUpdateSchema,
-)
+from task.apps.users.schemas import UserAddDTO, UserDTO, UserUpdateDTO, UserRelDto
 
 
 class UserService:
-    def __init__(self, repository: UserRepository):
+    def __init__(self, repository: UserRepository, auth_service: AuthService):
         self.repository = repository
+        self.auth_service = auth_service
 
-    def get_all(self) -> list[UserReadSchema]:
-        users = self.repository.get_all()
-        return [UserReadSchema.model_validate(user.model_dump()) for user in users]
+    async def get_all(self) -> list[UserRelDto]:
+        users = await self.repository.get_all()
+        return [UserRelDto.model_validate(user) for user in users]
 
-    def get_by_id(self, id: int) -> UserReadSchema:
-        user = self.repository.get_by_id(id)
+    async def get_by_id(self, user_id: int) -> UserRelDto:
+        user = await self.repository.get_by_id(user_id)
         if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-            )
-        return UserReadSchema.model_validate(user.model_dump())
+            raise ValueError(f"User with id {user_id} not found")
+        return UserRelDto.model_validate(user)
 
-    def get_by_id_list(self, list_id: list[int]) -> list[UserReadSchema]:
-        users = self.repository.get_by_ids(list_id)
+    async def get_by_ids(self, user_ids: list[int]) -> list[UserRelDto]:
+        users = await self.repository.get_by_ids(user_ids)
+        return [UserRelDto.model_validate(user) for user in users]
+
+    async def create_user(self, user_data: UserAddDTO) -> UserDTO:
+        hashed = self.auth_service.hash_password(user_data.hashed_password)
+        user_data.hashed_password = hashed
+        user = await self.repository.create(user_data)
+        if not user:
+            raise ValueError("Can not create user")
+        return UserDTO.model_validate(user)
+
+    async def create_many(self, users_data: list[UserAddDTO]) -> list[UserDTO]:
+        for user in users_data:
+            user.hashed_password = self.auth_service.hash_password(user.hashed_password)
+        users = await self.repository.create_many(users_data)
         if not users:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Users not found"
-            )
-        return [UserReadSchema.model_validate(user.model_dump()) for user in users]
+            raise ValueError("Can not create users")
+        return [UserDTO.model_validate(user) for user in users]
 
-    def create(self, data: UserCreateSchema) -> UserReadSchema:
-        existing = self.repository.get_all()
-        new_id = max([u.id for u in existing], default=0) + 1
-        new_user = UserFullSchema(id=new_id, **data.model_dump())
-        created = self.repository.create(new_user)
-        return UserReadSchema.model_validate(created.model_dump())
-
-    def create_many(self, users_data: list[UserCreateSchema]) -> list[UserReadSchema]:
-        existing = self.repository.get_all()
-        start_new_id = max([u.id for u in existing], default=0) + 1
-        new_users = []
-        for i, user in enumerate(users_data):
-            new_user = UserFullSchema(id=start_new_id + i, **user.model_dump())
-            new_users.append(new_user)
-        created = self.repository.create_many(new_users)
-        return [UserReadSchema.model_validate(user.model_dump()) for user in created]
-
-    def update(self, id: int, update_data: UserUpdateSchema) -> UserReadSchema:
-        user = self.repository.get_by_id(id)
+    async def update(self, id: int, user_data: UserUpdateDTO) -> UserDTO:
+        user = await self.repository.update(id, user_data)
         if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-            )
-        user_data = user.model_dump()
-        updated_fields = update_data.model_dump(exclude_unset=True)
-        user_data.update(updated_fields)
-        updated_user = UserFullSchema(**user_data)
-        self.repository.update(id, updated_user)
-        return UserReadSchema.model_validate(updated_user.model_dump())
+            raise ValueError(f"Can not update user on id {id}")
+        return UserDTO.model_validate(user)
 
-    def delete(self, id: int) -> UserReadSchema:
-        deleted = self.repository.delete(id)
-        if not deleted:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-            )
-        return UserReadSchema.model_validate(deleted.model_dump())
+    async def delete(self, id: int) -> UserDTO:
+        user = await self.repository.delete(id)
+        if not user:
+            raise ValueError(f"Can not delete user on id {id}")
+        return UserDTO.model_validate(user)

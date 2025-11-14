@@ -1,25 +1,31 @@
-from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from typing import List, Optional
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+from task.apps.project.schemas import ProjectRelDto
 
 
-class UserBaseSchema(BaseModel):
-    username: str = Field(min_length=1, max_length=20)
+class UserUpdateDTO(BaseModel):
+    username: Optional[str] = Field(min_length=3, max_length=50)
+    email: Optional[EmailStr]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserAddDTO(BaseModel):
+    username: str
+    email: EmailStr
+    hashed_password: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserDTO(BaseModel):
+    id: int
+    username: str
     email: EmailStr
 
-
-class UserCreateSchema(UserBaseSchema):
-    password: str | None = Field(min_length=6)
+    model_config = ConfigDict(from_attributes=True)
 
 
-class UserReadSchema(UserBaseSchema):
-    id: int
-
-
-class UserUpdateSchema(BaseModel):
-    username: Optional[str] = None
-    email: Optional[EmailStr] = None
-
-
-class UserFullSchema(UserBaseSchema):
-    id: int
-    password: str = Field(min_length=6)
+class UserRelDto(UserDTO):
+    projects: List["ProjectRelDto"] = []
