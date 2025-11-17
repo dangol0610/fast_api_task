@@ -10,9 +10,12 @@ from task.apps.project.schemas import (
     ProjectsWithParamsDTO,
 )
 from task.apps.project.services import ProjectService
+from task.apps.auth.dependencies import get_current_user
 
 
-project_router = APIRouter(prefix="/projects", tags=["Projects"])
+project_router = APIRouter(
+    prefix="/projects", tags=["Projects"], dependencies=[Depends(get_current_user)]
+)
 
 
 @project_router.get("/all")
