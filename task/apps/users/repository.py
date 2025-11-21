@@ -6,7 +6,8 @@ from task.utils.database import local_session
 
 
 class UserRepository:
-    async def get_all(self) -> list[User]:
+    @classmethod
+    async def get_all(cls) -> list[User]:
         """
         SELECT * FROM users
         SELECT projects.* FROM projects WHERE projects.user_id IN (...)
@@ -17,7 +18,8 @@ class UserRepository:
             users = result.scalars().all()
             return list(users)
 
-    async def get_by_id(self, id: int) -> User | None:
+    @classmethod
+    async def get_by_id(cls, id: int) -> User | None:
         """
         SELECT * FROM users
         WHERE id = :id
@@ -33,7 +35,8 @@ class UserRepository:
                 return None
             return user
 
-    async def get_by_ids(self, ids: list[int]) -> list[User]:
+    @classmethod
+    async def get_by_ids(cls, ids: list[int]) -> list[User]:
         """
         SELECT * FROM users
         WHERE id IN :ids
@@ -49,7 +52,8 @@ class UserRepository:
             users = result.scalars().all()
             return list(users)
 
-    async def create(self, user: UserAddDTO) -> User | None:
+    @classmethod
+    async def create(cls, user: UserAddDTO) -> User | None:
         """
         INSERT INTO users (...)
         VALUES(:user_data)
@@ -65,7 +69,8 @@ class UserRepository:
                 return None
             return user_res
 
-    async def create_many(self, users: list[UserAddDTO]) -> list[User] | None:
+    @classmethod
+    async def create_many(cls, users: list[UserAddDTO]) -> list[User] | None:
         """
         INSERT INTO users (...)
         VALUES (:users_to_insert)
@@ -81,7 +86,8 @@ class UserRepository:
                 return None
             return list(user_res)
 
-    async def update(self, user_id: int, new_user: UserUpdateDTO) -> User | None:
+    @classmethod
+    async def update(cls, user_id: int, new_user: UserUpdateDTO) -> User | None:
         """
         UPDATE users SET ... WHERE id = :user_id RETURNING *
         """
@@ -100,7 +106,8 @@ class UserRepository:
                 return None
             return user_res
 
-    async def delete(self, user_id: int) -> User | None:
+    @classmethod
+    async def delete(cls, user_id: int) -> User | None:
         """
         DELETE FROM users WHERE id = :user_id RETURNING *
         """
@@ -113,7 +120,8 @@ class UserRepository:
                 return None
             return user_res
 
-    async def get_by_username(self, username: str) -> User | None:
+    @classmethod
+    async def get_by_username(cls, username: str) -> User | None:
         """
         SELECT * FROM users WHERE username = :username
         """
@@ -125,7 +133,8 @@ class UserRepository:
                 return None
             return user_res
 
-    async def get_by_email(self, email: str) -> User | None:
+    @classmethod
+    async def get_by_email(cls, email: str) -> User | None:
         """
         SELECT * FROM users WHERE email = :email
         """

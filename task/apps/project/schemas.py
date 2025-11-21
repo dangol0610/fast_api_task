@@ -18,11 +18,11 @@ class ProjectAddDTO(BaseModel):
 
 
 class ProjectUpdateDTO(BaseModel):
-    name: Optional[str] = Field(min_length=3, max_length=30)
-    status: Optional[ProjectStatus]
-    start_time: Optional[datetime]
-    end_time: Optional[datetime]
-    description: Optional[str] = Field(max_length=1000)
+    name: Optional[str] = Field(min_length=3, max_length=30, default=None)
+    status: Optional[ProjectStatus] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    description: Optional[str] = Field(max_length=1000, default=None)
 
 
 class ProjectDTO(ProjectAddDTO):

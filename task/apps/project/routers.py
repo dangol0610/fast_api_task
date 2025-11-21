@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from task.apps.project.dependencies import get_service
 from task.apps.project.schemas import (
     ProjectAddDTO,
     ProjectDTO,
@@ -19,18 +18,14 @@ project_router = APIRouter(
 
 
 @project_router.get("/all")
-async def get_all(
-    params: ProjectParams = Depends(), service: ProjectService = Depends(get_service)
-) -> ProjectsWithParamsDTO:
-    return await service.get_with_params(params)
+async def get_all(params: ProjectParams = Depends()) -> ProjectsWithParamsDTO:
+    return await ProjectService.get_with_params(params)
 
 
 @project_router.get("/{project_id}")
-async def get_by_id(
-    project_id: int, service: ProjectService = Depends(get_service)
-) -> ProjectRelDto:
+async def get_by_id(project_id: int) -> ProjectRelDto:
     try:
-        project = await service.get_by_id(project_id)
+        project = await ProjectService.get_by_id(project_id)
         return project
     except ValueError:
         raise HTTPException(
@@ -39,11 +34,9 @@ async def get_by_id(
 
 
 @project_router.post("/create")
-async def create_project(
-    project_data: ProjectAddDTO, service: ProjectService = Depends(get_service)
-) -> ProjectDTO:
+async def create_project(project_data: ProjectAddDTO) -> ProjectDTO:
     try:
-        new_project = await service.create(project_data)
+        new_project = await ProjectService.create(project_data)
         return new_project
     except ValueError:
         raise HTTPException(
@@ -52,11 +45,9 @@ async def create_project(
 
 
 @project_router.post("/create_many")
-async def create_projects(
-    project_data: list[ProjectAddDTO], service: ProjectService = Depends(get_service)
-) -> list[ProjectDTO]:
+async def create_projects(project_data: list[ProjectAddDTO]) -> list[ProjectDTO]:
     try:
-        new_projects = await service.create_many(project_data)
+        new_projects = await ProjectService.create_many(project_data)
         return new_projects
     except ValueError:
         raise HTTPException(
@@ -68,10 +59,9 @@ async def create_projects(
 async def update_project(
     project_id: int,
     project_data: ProjectUpdateDTO,
-    service: ProjectService = Depends(get_service),
 ) -> ProjectDTO:
     try:
-        updated = await service.update(project_id, project_data)
+        updated = await ProjectService.update(project_id, project_data)
         return updated
     except ValueError:
         raise HTTPException(
@@ -80,11 +70,9 @@ async def update_project(
 
 
 @project_router.delete("/delete/{project_id}")
-async def delete_project(
-    project_id: int, service: ProjectService = Depends(get_service)
-) -> ProjectDTO:
+async def delete_project(project_id: int) -> ProjectDTO:
     try:
-        deleted = await service.delete(project_id)
+        deleted = await ProjectService.delete(project_id)
         return deleted
     except ValueError:
         raise HTTPException(

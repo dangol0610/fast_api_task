@@ -6,21 +6,10 @@ from task.apps.auth.repository import AuthRepository
 from task.apps.auth.services import AuthService
 from task.apps.users.schemas import UserAddDTO
 
-
-def get_repository():
-    connector = Connector()
-    return AuthRepository(connector)
-
-
-def get_auth_service(repository: AuthRepository = Depends(get_repository)):
-    return AuthService(repository)
-
-
 security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
-    service: AuthService = Depends(get_auth_service),
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> UserAddDTO:
     if not credentials:
@@ -29,7 +18,7 @@ async def get_current_user(
         )
     token = credentials.credentials
     try:
-        payload = service.decode_token(token)
+        payload = AuthService.decode_token(token)
         if not payload:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload"
@@ -39,7 +28,7 @@ async def get_current_user(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload"
             )
-        user = await service.repository.get_by_username(username)
+        user = await AuthRepository.get_by_username(username)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"

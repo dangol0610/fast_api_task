@@ -11,9 +11,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class AuthService:
-    def __init__(self, repository: AuthRepository) -> None:
-        self.repository = repository
-
     @staticmethod
     def hash_password(password: str) -> str:
         return pwd_context.hash(password)
@@ -54,19 +51,21 @@ class AuthService:
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
             )
 
-    async def register(self, data: AuthRegisterSchema):
-        data.password = self.hash_password(data.password)
-        return await self.repository.register_user(data)
+    @classmethod
+    async def register(cls, data: AuthRegisterSchema):
+        data.password = cls.hash_password(data.password)
+        return await AuthRepository.register_user(data)
 
-    async def login(self, username: str, password: str):
-        user = await self.repository.get_by_username(username)
-        if not user or not self.verify_password(password, user.hashed_password):
+    @classmethod
+    async def login(cls, username: str, password: str):
+        user = await AuthRepository.get_by_username(username)
+        if not user or not cls.verify_password(password, user.hashed_password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
             )
         payload = {"sub": user.username, "email": user.email}
-        access_token = self.create_access_token(payload)
-        refresh_token = self.create_refresh_token(payload)
+        access_token = cls.create_access_token(payload)
+        refresh_token = cls.create_refresh_token(payload)
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,

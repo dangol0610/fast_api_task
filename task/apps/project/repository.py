@@ -6,7 +6,8 @@ from task.utils.database import local_session
 
 
 class ProjectRepository:
-    async def get_by_id(self, id: int) -> Project | None:
+    @classmethod
+    async def get_by_id(cls, id: int) -> Project | None:
         """
         SELECT *
         FROM projects
@@ -25,7 +26,8 @@ class ProjectRepository:
                 return None
             return project
 
-    async def get_with_params(self, params: ProjectParams) -> dict:
+    @classmethod
+    async def get_with_params(cls, params: ProjectParams) -> dict:
         """
         SELECT * FROM projects
         WHERE status = :status AND person_in_charge = :person_in_charge
@@ -65,7 +67,8 @@ class ProjectRepository:
                 "has_next": params.page * params.page_size < total_count,
             }
 
-    async def create(self, project: ProjectAddDTO) -> Project | None:
+    @classmethod
+    async def create(cls, project: ProjectAddDTO) -> Project | None:
         """
         INSERT INTO projects (name, status, start_time, end_time, description, person_in_charge)
         VALUES (:name, :status, :start_time, :end_time, :description, :person_in_charge)
@@ -81,7 +84,8 @@ class ProjectRepository:
                 return None
             return project_res
 
-    async def create_many(self, projects: list[ProjectAddDTO]) -> list[Project] | None:
+    @classmethod
+    async def create_many(cls, projects: list[ProjectAddDTO]) -> list[Project] | None:
         """
         INSERT INTO projects (name, status, start_time, end_time, description, person_in_charge)
         VALUES (:name, :status, :start_time, :end_time, :description, :person_in_charge), ...
@@ -97,7 +101,8 @@ class ProjectRepository:
                 return None
             return list(projects_res)
 
-    async def update(self, id: int, project: ProjectUpdateDTO) -> Project | None:
+    @classmethod
+    async def update(cls, id: int, project: ProjectUpdateDTO) -> Project | None:
         """
         UPDATE projects
         SET name = :name, status = :status, start_time = :start_time, end_time = :end_time, description = :description, person_in_charge = :person_in_charge
@@ -119,7 +124,8 @@ class ProjectRepository:
                 return None
             return project_res
 
-    async def delete(self, id: int) -> Project | None:
+    @classmethod
+    async def delete(cls, id: int) -> Project | None:
         """
         DELETE FROM projects
         WHERE id = :id

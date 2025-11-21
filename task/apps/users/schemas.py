@@ -1,12 +1,12 @@
 from typing import List, Optional
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 from task.apps.project.schemas import ProjectRelDto
 
 
 class UserUpdateDTO(BaseModel):
-    username: Optional[str] = Field(min_length=3, max_length=50)
-    email: Optional[EmailStr]
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
 
     model_config = ConfigDict(from_attributes=True)
 
