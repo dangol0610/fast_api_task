@@ -1,15 +1,16 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError
-from task.apps.auth.connector import Connector
 from task.apps.auth.repository import AuthRepository
 from task.apps.auth.services import AuthService
 from task.apps.users.schemas import UserAddDTO
+from task.utils.dependencies import SessionDependency
 
 security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
+    session: SessionDependency,
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> UserAddDTO:
     if not credentials:
@@ -28,7 +29,7 @@ async def get_current_user(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload"
             )
-        user = await AuthRepository.get_by_username(username)
+        user = await AuthRepository.get_by_username(username=username, session=session)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"

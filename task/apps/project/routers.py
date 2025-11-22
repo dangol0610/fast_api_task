@@ -10,6 +10,7 @@ from task.apps.project.schemas import (
 )
 from task.apps.project.services import ProjectService
 from task.apps.auth.dependencies import get_current_user
+from task.utils.dependencies import SessionDependency
 
 
 project_router = APIRouter(
@@ -18,14 +19,16 @@ project_router = APIRouter(
 
 
 @project_router.get("/all")
-async def get_all(params: ProjectParams = Depends()) -> ProjectsWithParamsDTO:
-    return await ProjectService.get_with_params(params)
+async def get_all(
+    session: SessionDependency, params: ProjectParams = Depends()
+) -> ProjectsWithParamsDTO:
+    return await ProjectService.get_with_params(params=params, session=session)
 
 
 @project_router.get("/{project_id}")
-async def get_by_id(project_id: int) -> ProjectRelDto:
+async def get_by_id(session: SessionDependency, project_id: int) -> ProjectRelDto:
     try:
-        project = await ProjectService.get_by_id(project_id)
+        project = await ProjectService.get_by_id(project_id=project_id, session=session)
         return project
     except ValueError:
         raise HTTPException(
@@ -34,9 +37,13 @@ async def get_by_id(project_id: int) -> ProjectRelDto:
 
 
 @project_router.post("/create")
-async def create_project(project_data: ProjectAddDTO) -> ProjectDTO:
+async def create_project(
+    project_data: ProjectAddDTO, session: SessionDependency
+) -> ProjectDTO:
     try:
-        new_project = await ProjectService.create(project_data)
+        new_project = await ProjectService.create(
+            project_data=project_data, session=session
+        )
         return new_project
     except ValueError:
         raise HTTPException(
@@ -45,9 +52,13 @@ async def create_project(project_data: ProjectAddDTO) -> ProjectDTO:
 
 
 @project_router.post("/create_many")
-async def create_projects(project_data: list[ProjectAddDTO]) -> list[ProjectDTO]:
+async def create_projects(
+    project_data: list[ProjectAddDTO], session: SessionDependency
+) -> list[ProjectDTO]:
     try:
-        new_projects = await ProjectService.create_many(project_data)
+        new_projects = await ProjectService.create_many(
+            projects_data=project_data, session=session
+        )
         return new_projects
     except ValueError:
         raise HTTPException(
@@ -59,9 +70,12 @@ async def create_projects(project_data: list[ProjectAddDTO]) -> list[ProjectDTO]
 async def update_project(
     project_id: int,
     project_data: ProjectUpdateDTO,
+    session: SessionDependency,
 ) -> ProjectDTO:
     try:
-        updated = await ProjectService.update(project_id, project_data)
+        updated = await ProjectService.update(
+            project_id=project_id, project_data=project_data, session=session
+        )
         return updated
     except ValueError:
         raise HTTPException(
@@ -70,9 +84,9 @@ async def update_project(
 
 
 @project_router.delete("/delete/{project_id}")
-async def delete_project(project_id: int) -> ProjectDTO:
+async def delete_project(project_id: int, session: SessionDependency) -> ProjectDTO:
     try:
-        deleted = await ProjectService.delete(project_id)
+        deleted = await ProjectService.delete(project_id=project_id, session=session)
         return deleted
     except ValueError:
         raise HTTPException(

@@ -7,19 +7,26 @@ from task.apps.project.schemas import (
     ProjectUpdateDTO,
     ProjectsWithParamsDTO,
 )
+from task.utils.dependencies import SessionDependency
 
 
 class ProjectService:
     @classmethod
-    async def get_by_id(cls, project_id: int) -> ProjectRelDto:
-        project = await ProjectRepository.get_by_id(project_id)
+    async def get_by_id(
+        cls, project_id: int, session: SessionDependency
+    ) -> ProjectRelDto:
+        project = await ProjectRepository.get_by_id(id=project_id, session=session)
         if not project:
             raise ValueError(f"Project with id {project_id} not found")
         return ProjectRelDto.model_validate(project)
 
     @classmethod
-    async def get_with_params(cls, params: ProjectParams) -> ProjectsWithParamsDTO:
-        projects_data = await ProjectRepository.get_with_params(params)
+    async def get_with_params(
+        cls, params: ProjectParams, session: SessionDependency
+    ) -> ProjectsWithParamsDTO:
+        projects_data = await ProjectRepository.get_with_params(
+            params=params, session=session
+        )
         projects = [
             ProjectRelDto.model_validate(project)
             for project in projects_data["projects"]
@@ -33,31 +40,39 @@ class ProjectService:
         return ProjectsWithParamsDTO.model_validate(result)
 
     @classmethod
-    async def create(cls, project_data: ProjectAddDTO) -> ProjectDTO:
-        project = await ProjectRepository.create(project_data)
+    async def create(
+        cls, project_data: ProjectAddDTO, session: SessionDependency
+    ) -> ProjectDTO:
+        project = await ProjectRepository.create(project=project_data, session=session)
         if not project:
             raise ValueError("Can not create project")
         return ProjectDTO.model_validate(project)
 
     @classmethod
-    async def create_many(cls, projects_data: list[ProjectAddDTO]) -> list[ProjectDTO]:
-        projects = await ProjectRepository.create_many(projects_data)
+    async def create_many(
+        cls, projects_data: list[ProjectAddDTO], session: SessionDependency
+    ) -> list[ProjectDTO]:
+        projects = await ProjectRepository.create_many(
+            projects=projects_data, session=session
+        )
         if not projects:
             raise ValueError("Can not create projects")
         return [ProjectDTO.model_validate(project) for project in projects]
 
     @classmethod
     async def update(
-        cls, project_id: int, project_data: ProjectUpdateDTO
+        cls, project_id: int, project_data: ProjectUpdateDTO, session: SessionDependency
     ) -> ProjectDTO:
-        project = await ProjectRepository.update(project_id, project_data)
+        project = await ProjectRepository.update(
+            id=project_id, project=project_data, session=session
+        )
         if not project:
             raise ValueError(f"Project with id {project_id} not found")
         return ProjectDTO.model_validate(project)
 
     @classmethod
-    async def delete(cls, project_id: int) -> ProjectDTO:
-        project = await ProjectRepository.delete(project_id)
+    async def delete(cls, project_id: int, session: SessionDependency) -> ProjectDTO:
+        project = await ProjectRepository.delete(id=project_id, session=session)
         if not project:
             raise ValueError(f"Project with id {project_id} not found")
         return ProjectDTO.model_validate(project)

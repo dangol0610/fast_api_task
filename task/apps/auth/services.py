@@ -6,6 +6,7 @@ from jose import JWTError, jwt
 from task.apps.auth.repository import AuthRepository
 from task.apps.auth.schemas import AuthRegisterSchema
 from task.settings.settings import settings
+from task.utils.dependencies import SessionDependency
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -52,13 +53,13 @@ class AuthService:
             )
 
     @classmethod
-    async def register(cls, data: AuthRegisterSchema):
+    async def register(cls, data: AuthRegisterSchema, session: SessionDependency):
         data.password = cls.hash_password(data.password)
-        return await AuthRepository.register_user(data)
+        return await AuthRepository.register_user(data=data, session=session)
 
     @classmethod
-    async def login(cls, username: str, password: str):
-        user = await AuthRepository.get_by_username(username)
+    async def login(cls, username: str, password: str, session: SessionDependency):
+        user = await AuthRepository.get_by_username(username=username, session=session)
         if not user or not cls.verify_password(password, user.hashed_password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"

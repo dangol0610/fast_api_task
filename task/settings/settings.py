@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     DB_USER: str = Field(default="user")
     DB_PASS: str = Field(default="password")
     DB_NAME: str = Field(default="database")
+    TESTING: bool = False
 
     SECRET_KEY: str = Field(default="")
     ALG: str = "HS256"
