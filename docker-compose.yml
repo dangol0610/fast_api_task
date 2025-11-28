@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: alchemytasl_db
+    ports:
+      - "5432:5432"
+    volumes:
+     - postgres_data:/var/lib/postgresql
+    networks:
+      - backend
+    
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    networks: 
+      - backend
+    volumes:
+      - .:/app
+
+networks:
+  backend:
+
+volumes:
+  postgres_data:
