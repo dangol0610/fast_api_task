@@ -28,4 +28,4 @@ class Project(Base):
     person_in_charge: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id", ondelete="CASCADE")
     )
-    user: Mapped["User"] = relationship(back_populates="projects")  # type: ignore # noqa: F821
+    user: Mapped["User"] = relationship("User", back_populates="projects")  # type: ignore # noqa: F821

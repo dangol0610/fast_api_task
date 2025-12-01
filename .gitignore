@@ -4,4 +4,4 @@
 .pytest_cache/
 htmlcov/
 .coverage
-uv.lock
+.ruff_cache

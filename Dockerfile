@@ -1,13 +1,11 @@
-FROM ghcr.io/astral-sh/uv:0.9.13-python3.13-trixie
+FROM python:3.13-slim
 
 WORKDIR /app
 
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock requirements.txt ./
 
-RUN uv sync --locked --no-install-project --no-dev
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN uv sync --locked --no-dev
-
-CMD ["sh", "-c", "uv run alembic upgrade head && uv run uvicorn task.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "alembic upgrade head && uvicorn task.main:app --host 0.0.0.0 --port 8000"]

@@ -10,6 +10,9 @@ class User(Base):
     username: Mapped[str] = mapped_column(String, nullable=False)
     email: Mapped[str] = mapped_column(String, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
-    projects: Mapped[list["Project"]] = relationship(  # type: ignore # noqa: F821
-        back_populates="user", cascade="all, delete-orphan"
+    projects: Mapped[list["Project"]] = relationship(  # noqa: F821 # type: ignore
+        "Project",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
