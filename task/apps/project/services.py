@@ -7,13 +7,15 @@ from task.apps.project.schemas import (
     ProjectUpdateDTO,
     ProjectsWithParamsDTO,
 )
-from task.utils.dependencies import SessionDependency
+from task.utils.dependencies import RedisDependency, SessionDependency
 
 
 class ProjectService:
     @classmethod
     async def get_by_id(
-        cls, project_id: int, session: SessionDependency
+        cls,
+        project_id: int,
+        session: SessionDependency,
     ) -> ProjectRelDto:
         project = await ProjectRepository.get_by_id(id=project_id, session=session)
         if not project:
@@ -41,38 +43,62 @@ class ProjectService:
 
     @classmethod
     async def create(
-        cls, project_data: ProjectAddDTO, session: SessionDependency
+        cls,
+        project_data: ProjectAddDTO,
+        session: SessionDependency,
+        redis: RedisDependency,
     ) -> ProjectDTO:
         project = await ProjectRepository.create(project=project_data, session=session)
         if not project:
             raise ValueError("Can not create project")
+        await redis.delete("users:all")
+        await redis.delete(f"user:{project.person_in_charge}")
         return ProjectDTO.model_validate(project)
 
     @classmethod
     async def create_many(
-        cls, projects_data: list[ProjectAddDTO], session: SessionDependency
+        cls,
+        projects_data: list[ProjectAddDTO],
+        session: SessionDependency,
+        redis: RedisDependency,
     ) -> list[ProjectDTO]:
         projects = await ProjectRepository.create_many(
             projects=projects_data, session=session
         )
         if not projects:
             raise ValueError("Can not create projects")
+        await redis.delete("users:all")
         return [ProjectDTO.model_validate(project) for project in projects]
 
     @classmethod
     async def update(
-        cls, project_id: int, project_data: ProjectUpdateDTO, session: SessionDependency
+        cls,
+        project_id: int,
+        project_data: ProjectUpdateDTO,
+        session: SessionDependency,
+        redis: RedisDependency,
     ) -> ProjectDTO:
         project = await ProjectRepository.update(
-            id=project_id, project=project_data, session=session
+            id=project_id,
+            project=project_data,
+            session=session,
         )
         if not project:
             raise ValueError(f"Project with id {project_id} not found")
+        await redis.delete("users:all")
+        await redis.delete(f"user:{project.person_in_charge}")
         return ProjectDTO.model_validate(project)
 
     @classmethod
-    async def delete(cls, project_id: int, session: SessionDependency) -> ProjectDTO:
+    async def delete(
+        cls,
+        project_id: int,
+        session: SessionDependency,
+        redis: RedisDependency,
+    ) -> ProjectDTO:
         project = await ProjectRepository.delete(id=project_id, session=session)
         if not project:
             raise ValueError(f"Project with id {project_id} not found")
+        await redis.delete("users:all")
+        await redis.delete(f"user:{project.person_in_charge}")
         return ProjectDTO.model_validate(project)

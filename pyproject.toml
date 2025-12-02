@@ -52,6 +52,7 @@ dependencies = [
     "python-jose==3.5.0",
     "python-multipart==0.0.20",
     "pyyaml==6.0.3",
+    "redis[asyncio]>=7.1.0",
     "rich==14.2.0",
     "rich-toolkit==0.15.1",
     "rignore==0.7.1",

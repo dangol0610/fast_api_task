@@ -10,7 +10,7 @@ from task.apps.project.schemas import (
 )
 from task.apps.project.services import ProjectService
 from task.apps.auth.dependencies import get_current_user
-from task.utils.dependencies import SessionDependency
+from task.utils.dependencies import RedisDependency, SessionDependency
 
 
 project_router = APIRouter(
@@ -20,7 +20,8 @@ project_router = APIRouter(
 
 @project_router.get("/all")
 async def get_all(
-    session: SessionDependency, params: ProjectParams = Depends()
+    session: SessionDependency,
+    params: ProjectParams = Depends(),
 ) -> ProjectsWithParamsDTO:
     return await ProjectService.get_with_params(params=params, session=session)
 
@@ -38,11 +39,15 @@ async def get_by_id(session: SessionDependency, project_id: int) -> ProjectRelDt
 
 @project_router.post("/create")
 async def create_project(
-    project_data: ProjectAddDTO, session: SessionDependency
+    project_data: ProjectAddDTO,
+    session: SessionDependency,
+    redis: RedisDependency,
 ) -> ProjectDTO:
     try:
         new_project = await ProjectService.create(
-            project_data=project_data, session=session
+            project_data=project_data,
+            session=session,
+            redis=redis,
         )
         return new_project
     except ValueError:
@@ -53,11 +58,15 @@ async def create_project(
 
 @project_router.post("/create_many")
 async def create_projects(
-    project_data: list[ProjectAddDTO], session: SessionDependency
+    project_data: list[ProjectAddDTO],
+    session: SessionDependency,
+    redis: RedisDependency,
 ) -> list[ProjectDTO]:
     try:
         new_projects = await ProjectService.create_many(
-            projects_data=project_data, session=session
+            projects_data=project_data,
+            session=session,
+            redis=redis,
         )
         return new_projects
     except ValueError:
@@ -71,10 +80,14 @@ async def update_project(
     project_id: int,
     project_data: ProjectUpdateDTO,
     session: SessionDependency,
+    redis: RedisDependency,
 ) -> ProjectDTO:
     try:
         updated = await ProjectService.update(
-            project_id=project_id, project_data=project_data, session=session
+            project_id=project_id,
+            project_data=project_data,
+            session=session,
+            redis=redis,
         )
         return updated
     except ValueError:
@@ -84,9 +97,17 @@ async def update_project(
 
 
 @project_router.delete("/delete/{project_id}")
-async def delete_project(project_id: int, session: SessionDependency) -> ProjectDTO:
+async def delete_project(
+    project_id: int,
+    session: SessionDependency,
+    redis: RedisDependency,
+) -> ProjectDTO:
     try:
-        deleted = await ProjectService.delete(project_id=project_id, session=session)
+        deleted = await ProjectService.delete(
+            project_id=project_id,
+            session=session,
+            redis=redis,
+        )
         return deleted
     except ValueError:
         raise HTTPException(
