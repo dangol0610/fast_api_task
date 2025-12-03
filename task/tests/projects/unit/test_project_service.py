@@ -97,11 +97,14 @@ async def test_create(mocker):
         person_in_charge=1,
     )
     session = AsyncMock()
+    fake_redis = AsyncMock()
     mock_create = mocker.patch(
         "task.apps.project.services.ProjectRepository.create",
         AsyncMock(return_value=expected_obj),
     )
-    result = await ProjectService.create(project_data=project_data, session=session)
+    result = await ProjectService.create(
+        project_data=project_data, session=session, redis=fake_redis
+    )
     assert isinstance(result, ProjectDTO)
     assert result.name == expected_obj.name
     mock_create.assert_awaited_once_with(project=project_data, session=session)
@@ -150,12 +153,15 @@ async def test_create_many(mocker):
         ),
     ]
     session = AsyncMock()
+    fake_redis = AsyncMock()
     mock_create_many = mocker.patch(
         "task.apps.project.services.ProjectRepository.create_many",
         AsyncMock(return_value=expected_obj),
     )
     result = await ProjectService.create_many(
-        projects_data=project_data, session=session
+        projects_data=project_data,
+        session=session,
+        redis=fake_redis,
     )
     assert all(isinstance(project, ProjectDTO) for project in result)
     assert len(result) == 2
@@ -185,12 +191,16 @@ async def test_update(mocker):
         person_in_charge=1,
     )
     session = AsyncMock()
+    fake_redis = AsyncMock()
     mock_update = mocker.patch(
         "task.apps.project.services.ProjectRepository.update",
         AsyncMock(return_value=expected_obj),
     )
     result = await ProjectService.update(
-        project_id=id, project_data=update_data, session=session
+        project_id=id,
+        project_data=update_data,
+        session=session,
+        redis=fake_redis,
     )
     assert isinstance(result, ProjectDTO)
     assert result.name == "test_updated"
@@ -212,11 +222,16 @@ async def test_delete(mocker):
         person_in_charge=1,
     )
     session = AsyncMock()
+    fake_redis = AsyncMock()
     mock_delete = mocker.patch(
         "task.apps.project.services.ProjectRepository.delete",
         AsyncMock(return_value=expected_obj),
     )
-    result = await ProjectService.delete(project_id=id, session=session)
+    result = await ProjectService.delete(
+        project_id=id,
+        session=session,
+        redis=fake_redis,
+    )
     assert isinstance(result, ProjectDTO)
     assert result.id == 1
     assert result.name == "test"

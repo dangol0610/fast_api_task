@@ -22,11 +22,14 @@ async def test_get_all(mocker):
         ),
     ]
     session = AsyncMock()
+    fake_redis = AsyncMock()
+    fake_redis.get = AsyncMock(return_value=None)
+    fake_redis.set = AsyncMock()
     mock_get_all = mocker.patch(
         "task.apps.users.services.UserRepository.get_all",
         AsyncMock(return_value=expected_obj),
     )
-    result = await UserService.get_all(session)
+    result = await UserService.get_all(session, redis=fake_redis)
     assert all(isinstance(user, UserRelDto) for user in result)
     assert result[0].username == "testuser"
     assert result[1].username == "testuser2"
@@ -42,11 +45,14 @@ async def test_get_by_id(mocker):
         hashed_password="hashed_password",
     )
     session = AsyncMock()
+    fake_redis = AsyncMock()
+    fake_redis.get = AsyncMock(return_value=None)
+    fake_redis.set = AsyncMock()
     mock_get_by_id = mocker.patch(
         "task.apps.users.services.UserRepository.get_by_id",
         AsyncMock(return_value=expected_obj),
     )
-    result = await UserService.get_by_id(1, session)
+    result = await UserService.get_by_id(1, session, redis=fake_redis)
     assert isinstance(result, UserRelDto)
     assert result.username == "testuser"
     mock_get_by_id.assert_awaited_once_with(id=1, session=session)
@@ -90,6 +96,7 @@ async def test_create_user(mocker):
         email="test@example.com",
     )
     session = AsyncMock()
+    fake_redis = AsyncMock()
     user_obj = User(
         id=1,
         username="testuser",
@@ -104,7 +111,7 @@ async def test_create_user(mocker):
         "task.apps.users.services.UserRepository.create",
         AsyncMock(return_value=user_obj),
     )
-    result = await UserService.create_user(user_data, session)
+    result = await UserService.create_user(user_data, session, redis=fake_redis)
     assert isinstance(result, UserDTO)
     mock_hash_password.assert_called_once_with("testpassword")
     mock_create_user.assert_awaited_once_with(user=user_data, session=session)
@@ -118,6 +125,7 @@ async def test_create_user_invalid(mocker):
         email="test@example.com",
     )
     session = AsyncMock()
+    fake_redis = AsyncMock()
     mock_hash_password = mocker.patch(
         "task.apps.users.services.AuthService.hash_password",
         Mock(return_value="hashed_password"),
@@ -127,7 +135,7 @@ async def test_create_user_invalid(mocker):
         AsyncMock(return_value=None),
     )
     with pytest.raises(ValueError):
-        await UserService.create_user(user_data, session)
+        await UserService.create_user(user_data, session, fake_redis)
     mock_hash_password.assert_called_once_with("testpassword")
     mock_create_user.assert_awaited_once_with(user=user_data, session=session)
 
@@ -161,6 +169,7 @@ async def test_create_many(mocker):
             hashed_password="hashed_password2",
         ),
     ]
+    fake_redis = AsyncMock()
     mock_hash_password = mocker.patch(
         "task.apps.users.services.AuthService.hash_password",
         Mock(side_effect=["hashed_password1", "hashed_password2"]),
@@ -169,7 +178,7 @@ async def test_create_many(mocker):
         "task.apps.users.services.UserRepository.create_many",
         AsyncMock(return_value=expected_objs),
     )
-    result = await UserService.create_many(users_data, session)
+    result = await UserService.create_many(users_data, session, fake_redis)
     assert all(isinstance(user, UserDTO) for user in result)
     mock_hash_password.assert_has_calls([call("testpassword1"), call("testpassword2")])
     mock_create_many.assert_called_once_with(users=users_data, session=session)
@@ -186,11 +195,12 @@ async def test_update(mocker):
         email="new@mail.com",
         hashed_password="hashed_password",
     )
+    fake_redis = AsyncMock()
     mocked_update = mocker.patch(
         "task.apps.users.services.UserRepository.update",
         AsyncMock(return_value=expected_obj),
     )
-    result = await UserService.update(user_id, user_data, session)
+    result = await UserService.update(user_id, user_data, session, fake_redis)
     assert isinstance(result, UserDTO)
     assert result.username == "newname"
     assert result.email == "new@mail.com"
@@ -211,11 +221,12 @@ async def test_delete(mocker):
         hashed_password="hashed_password",
     )
     session = AsyncMock()
+    fake_redis = AsyncMock()
     mocked_delete = mocker.patch(
         "task.apps.users.services.UserRepository.delete",
         AsyncMock(return_value=expected_obj),
     )
-    result = await UserService.delete(user_id, session)
+    result = await UserService.delete(user_id, session, fake_redis)
     assert isinstance(result, UserDTO)
     assert result.username == "testname"
     assert result.email == "test@mail.com"
@@ -226,10 +237,11 @@ async def test_delete(mocker):
 async def test_delete_not_found(mocker):
     user_id = 1
     session = AsyncMock()
+    fake_redis = AsyncMock()
     mocked_delete = mocker.patch(
         "task.apps.users.services.UserRepository.delete",
         AsyncMock(return_value=None),
     )
     with pytest.raises(ValueError):
-        await UserService.delete(user_id, session)
+        await UserService.delete(user_id, session, fake_redis)
     mocked_delete.assert_awaited_once_with(user_id=user_id, session=session)
