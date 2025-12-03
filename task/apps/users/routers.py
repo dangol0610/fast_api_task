@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from task.apps.users.services import UserService
-from task.apps.auth.dependencies import get_current_user
+from task.apps.auth.dependencies import get_current_by_session, get_current_user
 from task.apps.users.schemas import UserAddDTO, UserDTO, UserRelDto, UserUpdateDTO
 from task.utils.dependencies import RedisDependency, SessionDependency
 
 user_router = APIRouter(
-    prefix="/users", tags=["Users"], dependencies=[Depends(get_current_user)]
+    prefix="/users",
+    tags=["Users"],
+    dependencies=[Depends(get_current_user), Depends(get_current_by_session)],
 )
 
 

@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 
-from task.apps.auth.dependencies import get_current_user
+from task.apps.auth.dependencies import get_current_by_session, get_current_user
 from task.apps.auth.schemas import AuthRegisterSchema
 from task.apps.auth.services import AuthService
 from task.apps.users.schemas import UserAddDTO
-from task.utils.dependencies import SessionDependency
+from task.utils.dependencies import RedisDependency, SessionDependency
 
 
 auth_router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -18,13 +18,29 @@ async def register_user(data: AuthRegisterSchema, session: SessionDependency):
 
 @auth_router.post("/login")
 async def login_user(
-    session: SessionDependency, form_data: OAuth2PasswordRequestForm = Depends()
+    session: SessionDependency,
+    redis: RedisDependency,
+    form_data: OAuth2PasswordRequestForm = Depends(),
 ):
     return await AuthService.login(
-        username=form_data.username, password=form_data.password, session=session
+        username=form_data.username,
+        password=form_data.password,
+        session=session,
+        redis=redis,
     )
 
 
 @auth_router.get("/me")
-async def get_me(current_user: UserAddDTO = Depends(get_current_user)):
-    return {"user": current_user}
+async def get_me(
+    current_user_by_token: UserAddDTO = Depends(get_current_user),
+    current_user_by_session: UserAddDTO = Depends(get_current_by_session),
+):
+    return {"user": current_user_by_token}
+
+
+@auth_router.get("/profile")
+async def profile(
+    current_user_by_token: UserAddDTO = Depends(get_current_user),
+    current_user_by_session: UserAddDTO = Depends(get_current_by_session),
+):
+    return {"user": current_user_by_session}

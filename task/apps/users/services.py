@@ -1,4 +1,5 @@
 import json
+from fastapi import HTTPException, status
 from redis import Redis
 from task.apps.auth.services import AuthService
 from task.apps.users.repository import UserRepository
@@ -37,15 +38,28 @@ class UserService:
         ttl_cache=300,
     ) -> UserRelDto:
         cache_key = f"user:{user_id}"
-        cached_data = await redis.get(cache_key)
-        if cached_data:
-            return UserRelDto.model_validate_json(cached_data)
-
+        try:
+            cached_data = await redis.get(cache_key)
+            await redis.incr(f"stats:hits:user:{user_id}")
+            if cached_data:
+                return UserRelDto.model_validate_json(cached_data)
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Redis error"
+            )
         user = await UserRepository.get_by_id(id=user_id, session=session)
         if not user:
             raise ValueError(f"User with id {user_id} not found")
         user = UserRelDto.model_validate(user)
-        await redis.set(cache_key, user.model_dump_json(), ex=ttl_cache)
+        if cached_data is None:
+            try:
+                await redis.set(cache_key, user.model_dump_json(), ex=ttl_cache)
+                await redis.incr(f"stats:miss:user:{user_id}")
+            except Exception:
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Redis error",
+                )
         return user
 
     @classmethod

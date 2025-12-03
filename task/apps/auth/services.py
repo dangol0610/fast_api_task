@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import uuid
 from fastapi import HTTPException, status
 from passlib.context import CryptContext
 from jose import JWTError, jwt
@@ -6,7 +7,7 @@ from jose import JWTError, jwt
 from task.apps.auth.repository import AuthRepository
 from task.apps.auth.schemas import AuthRegisterSchema
 from task.settings.settings import settings
-from task.utils.dependencies import SessionDependency
+from task.utils.dependencies import RedisDependency, SessionDependency
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -58,12 +59,21 @@ class AuthService:
         return await AuthRepository.register_user(data=data, session=session)
 
     @classmethod
-    async def login(cls, username: str, password: str, session: SessionDependency):
+    async def login(
+        cls,
+        username: str,
+        password: str,
+        session: SessionDependency,
+        redis: RedisDependency,
+    ):
         user = await AuthRepository.get_by_username(username=username, session=session)
         if not user or not cls.verify_password(password, user.hashed_password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
             )
+        session_id = str(uuid.uuid4())
+        await redis.set(f"session:{session_id}", user.username, ex=600)
+
         payload = {"sub": user.username, "email": user.email}
         access_token = cls.create_access_token(payload)
         refresh_token = cls.create_refresh_token(payload)
@@ -71,4 +81,5 @@ class AuthService:
             "access_token": access_token,
             "refresh_token": refresh_token,
             "token_type": "bearer",
+            "session": session_id,
         }
