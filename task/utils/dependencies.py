@@ -8,7 +8,7 @@ from task.utils.database import get_session
 
 
 redis_client: Redis = Redis.from_url(
-    url=settings.redis_url,
+    url=settings.redis_cache_url,
     decode_responses=True,
 )
 

@@ -5,12 +5,14 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "aiosmtplib>=5.0.0",
     "alembic==1.17.1",
     "annotated-doc==0.0.3",
     "annotated-types==0.7.0",
     "anyio==4.11.0",
     "asyncpg==0.30.0",
     "bcrypt==4.3.0",
+    "celery[redis]>=5.3.1",
     "certifi==2025.10.5",
     "click==8.3.0",
     "colorama==0.4.6",
@@ -20,6 +22,8 @@ dependencies = [
     "fastapi==0.120.1",
     "fastapi-cli==0.0.14",
     "fastapi-cloud-cli==0.3.1",
+    "flower>=2.0.1",
+    "gevent>=25.9.1",
     "greenlet==3.2.4",
     "h11==0.16.0",
     "httpcore==1.0.9",
