@@ -3,7 +3,7 @@ services:
     image: postgres:latest
     container_name: postgres
     env_file:
-      - ./task/.docker.env
+      - ./task/.env
     ports:
       - "5433:5432"
     volumes:
@@ -37,7 +37,7 @@ services:
     image: fast_api_task-app
     container_name: app
     env_file:
-      - ./task/.docker.env
+      - ./task/.env
     ports:
       - "8000:8000"
     depends_on:
@@ -59,7 +59,7 @@ services:
     image: fast_api_task-app
     container_name: worker
     env_file:
-      - ./task/.docker.env
+      - ./task/.env
     command: celery -A task.celery.celery_utils.celery_app worker --loglevel=info --pool=gevent --concurrency=4 -E
     depends_on:
       redis:
@@ -81,7 +81,7 @@ services:
     image: fast_api_task-app
     container_name: flower
     env_file:
-      - ./task/.docker.env
+      - ./task/.env
     command: celery -A task.celery.celery_utils.celery_app flower --port=5555
     ports:
       - "5555:5555"

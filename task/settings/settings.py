@@ -3,11 +3,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    DB_HOST: str = Field(default="localhost")
-    DB_PORT: int = Field(default=5432)
-    DB_USER: str = Field(default="user")
-    DB_PASS: str = Field(default="password")
-    DB_NAME: str = Field(default="database")
+    POSTGRES_USER: str = Field(default="postgres")
+    POSTGRES_PASSWORD: str = Field(default="postgres")
+    POSTGRES_DB: str = Field(default="alchemytask_db")
+    POSTGRES_HOST: str = Field(default="postgres")
+    POSTGRES_PORT: int = Field(default=5432)
 
     REDIS_HOST: str = Field(default="localhost")
     REDIS_PORT: int = Field(default=6379)
@@ -33,7 +33,7 @@ class Settings(BaseSettings):
 
     @property
     def db_url(self) -> str:
-        return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     @property
     def redis_cache_url(self) -> str:
