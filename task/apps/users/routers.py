@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import Annotated
+from fastapi import APIRouter, Depends, Query
 
 from task.apps.users.services import UserService
 from task.apps.auth.dependencies import get_current_by_session, get_current_user
@@ -8,7 +9,6 @@ from task.utils.dependencies import RedisDependency, SessionDependency
 user_router = APIRouter(
     prefix="/users",
     tags=["Users"],
-    dependencies=[Depends(get_current_user), Depends(get_current_by_session)],
 )
 
 
@@ -46,16 +46,15 @@ async def create_user(
     user: UserAddDTO,
     session: SessionDependency,
     redis: RedisDependency,
+    session_header: Annotated[str, Depends(get_current_by_session)],
+    token: Annotated[str, Depends(get_current_user)],
 ) -> UserDTO:
-    try:
-        created = await UserService.create_user(
-            user_data=user,
-            session=session,
-            redis=redis,
-        )
-        return created
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    created = await UserService.create_user(
+        user_data=user,
+        session=session,
+        redis=redis,
+    )
+    return created
 
 
 @user_router.post("/create_many")
@@ -63,16 +62,15 @@ async def create_users(
     users: list[UserAddDTO],
     session: SessionDependency,
     redis: RedisDependency,
+    session_header: Annotated[str, Depends(get_current_by_session)],
+    token: Annotated[str, Depends(get_current_user)],
 ) -> list[UserDTO]:
-    try:
-        created = await UserService.create_many(
-            users_data=users,
-            session=session,
-            redis=redis,
-        )
-        return created
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    created = await UserService.create_many(
+        users_data=users,
+        session=session,
+        redis=redis,
+    )
+    return created
 
 
 @user_router.patch("/{user_id}")
@@ -81,17 +79,16 @@ async def update_user(
     data: UserUpdateDTO,
     session: SessionDependency,
     redis: RedisDependency,
+    session_header: Annotated[str, Depends(get_current_by_session)],
+    token: Annotated[str, Depends(get_current_user)],
 ) -> UserDTO:
-    try:
-        updated = await UserService.update(
-            id=user_id,
-            user_data=data,
-            session=session,
-            redis=redis,
-        )
-        return updated
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    updated = await UserService.update(
+        id=user_id,
+        user_data=data,
+        session=session,
+        redis=redis,
+    )
+    return updated
 
 
 @user_router.delete("/{user_id}")
@@ -99,13 +96,12 @@ async def delete_user(
     user_id: int,
     session: SessionDependency,
     redis: RedisDependency,
+    session_header: Annotated[str, Depends(get_current_by_session)],
+    token: Annotated[str, Depends(get_current_user)],
 ) -> UserDTO:
-    try:
-        deleted = await UserService.delete(
-            id=user_id,
-            session=session,
-            redis=redis,
-        )
-        return deleted
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    deleted = await UserService.delete(
+        id=user_id,
+        session=session,
+        redis=redis,
+    )
+    return deleted

@@ -8,7 +8,7 @@ from task.apps.auth.dependencies import get_current_user
 from task.settings.settings import settings
 from task.utils.database import Base, get_session
 from task.main import app
-from task.utils.dependencies import httpx_client
+from task.utils.dependencies import get_redis, httpx_client
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -44,6 +44,15 @@ def fake_session():
 
 
 @pytest.fixture
+def fake_redis():
+    mock = AsyncMock()
+    mock.incr.return_value = 1
+    mock.expire.return_value = True
+    mock.get.return_value = None
+    return mock
+
+
+@pytest.fixture
 def client(fake_current_user, fake_session):
     async def override_current_user():
         return fake_current_user
@@ -54,9 +63,13 @@ def client(fake_current_user, fake_session):
     async def override_httpx_client():
         yield None
 
+    async def override_redis():
+        yield fake_redis
+
     app.dependency_overrides[get_current_user] = override_current_user
     app.dependency_overrides[get_session] = override_session
     app.dependency_overrides[httpx_client] = override_httpx_client
+    app.dependency_overrides[get_redis] = override_redis
 
     client = TestClient(app)
     yield client

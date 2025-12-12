@@ -1,13 +1,15 @@
 from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import selectinload
 from task.apps.project.models import Project
 from task.apps.project.schemas import ProjectAddDTO, ProjectParams, ProjectUpdateDTO
 from task.utils.dependencies import SessionDependency
+from task.utils.exceptions import DatabaseException, ItemNotFoundException
 
 
 class ProjectRepository:
     @classmethod
-    async def get_by_id(cls, id: int, session: SessionDependency) -> Project | None:
+    async def get_by_id(cls, id: int, session: SessionDependency) -> Project:
         """
         SELECT *
         FROM projects
@@ -17,10 +19,13 @@ class ProjectRepository:
         query = (
             select(Project).options(selectinload(Project.user)).where(Project.id == id)
         )
-        result = await session.execute(query)
-        project = result.scalar_one_or_none()
-        if not project:
-            return None
+        try:
+            result = await session.execute(query)
+            project = result.scalar_one_or_none()
+            if not project:
+                raise ItemNotFoundException
+        except SQLAlchemyError:
+            raise DatabaseException
         return project
 
     @classmethod
@@ -54,8 +59,11 @@ class ProjectRepository:
         query = query.offset((params.page - 1) * params.page_size).limit(
             params.page_size
         )
-        result = await session.execute(query)
-        projects_res = result.scalars().all()
+        try:
+            result = await session.execute(query)
+            projects_res = result.scalars().all()
+        except SQLAlchemyError:
+            raise DatabaseException
         return {
             "projects": projects_res,
             "total_count": total_count,
@@ -66,7 +74,7 @@ class ProjectRepository:
     @classmethod
     async def create(
         cls, project: ProjectAddDTO, session: SessionDependency
-    ) -> Project | None:
+    ) -> Project:
         """
         INSERT INTO projects (name, status, start_time, end_time, description, person_in_charge)
         VALUES (:name, :status, :start_time, :end_time, :description, :person_in_charge)
@@ -74,17 +82,18 @@ class ProjectRepository:
         """
         project_data = project.model_dump()
         stmt = insert(Project).values(project_data).returning(Project)
-        result = await session.execute(stmt)
-        await session.commit()
-        project_res = result.scalar_one_or_none()
-        if not project_res:
-            return None
+        try:
+            result = await session.execute(stmt)
+            await session.commit()
+            project_res = result.scalar_one()
+        except SQLAlchemyError:
+            raise DatabaseException
         return project_res
 
     @classmethod
     async def create_many(
         cls, projects: list[ProjectAddDTO], session: SessionDependency
-    ) -> list[Project] | None:
+    ) -> list[Project]:
         """
         INSERT INTO projects (name, status, start_time, end_time, description, person_in_charge)
         VALUES (:name, :status, :start_time, :end_time, :description, :person_in_charge), ...
@@ -92,17 +101,18 @@ class ProjectRepository:
         """
         projects_data = [project.model_dump() for project in projects]
         stmt = insert(Project).values(projects_data).returning(Project)
-        result = await session.execute(stmt)
-        await session.commit()
-        projects_res = result.scalars().all()
-        if not projects_res:
-            return None
+        try:
+            result = await session.execute(stmt)
+            await session.commit()
+            projects_res = result.scalars().all()
+        except SQLAlchemyError:
+            raise DatabaseException
         return list(projects_res)
 
     @classmethod
     async def update(
         cls, id: int, project: ProjectUpdateDTO, session: SessionDependency
-    ) -> Project | None:
+    ) -> Project:
         """
         UPDATE projects
         SET name = :name, status = :status, start_time = :start_time, end_time = :end_time, description = :description, person_in_charge = :person_in_charge
@@ -117,10 +127,13 @@ class ProjectRepository:
             .returning(Project)
         )
         result = await session.execute(stmt)
-        await session.commit()
-        project_res = result.scalar_one_or_none()
-        if not project_res:
-            return None
+        try:
+            await session.commit()
+            project_res = result.scalar_one_or_none()
+            if not project_res:
+                raise ItemNotFoundException
+        except SQLAlchemyError:
+            raise DatabaseException
         return project_res
 
     @classmethod
@@ -131,9 +144,12 @@ class ProjectRepository:
         RETURNING *
         """
         stmt = delete(Project).where(Project.id == id).returning(Project)
-        result = await session.execute(stmt)
-        await session.commit()
-        project_res = result.scalar_one_or_none()
-        if not project_res:
-            return None
+        try:
+            result = await session.execute(stmt)
+            await session.commit()
+            project_res = result.scalar_one_or_none()
+            if not project_res:
+                raise ItemNotFoundException
+        except SQLAlchemyError:
+            raise DatabaseException
         return project_res

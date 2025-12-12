@@ -20,7 +20,7 @@ def make_celery():
         beat_schedule={
             "minute_report": {
                 "task": "task.celery.tasks.periodic.weekly_report",
-                "schedule": crontab(minute="*/1"),
+                "schedule": crontab(minute="*/10"),
             },
         },
     )

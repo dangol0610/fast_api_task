@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Annotated
+from fastapi import APIRouter, Depends
 
 from task.apps.project.schemas import (
     ProjectAddDTO,
@@ -16,7 +17,6 @@ from task.utils.dependencies import RedisDependency, SessionDependency
 project_router = APIRouter(
     prefix="/projects",
     tags=["Projects"],
-    dependencies=[Depends(get_current_user), Depends(get_current_by_session)],
 )
 
 
@@ -30,13 +30,7 @@ async def get_all(
 
 @project_router.get("/{project_id}")
 async def get_by_id(session: SessionDependency, project_id: int) -> ProjectRelDto:
-    try:
-        project = await ProjectService.get_by_id(project_id=project_id, session=session)
-        return project
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
-        )
+    return await ProjectService.get_by_id(project_id=project_id, session=session)
 
 
 @project_router.post("/create")
@@ -44,18 +38,15 @@ async def create_project(
     project_data: ProjectAddDTO,
     session: SessionDependency,
     redis: RedisDependency,
+    session_header: Annotated[str, Depends(get_current_by_session)],
+    token: Annotated[str, Depends(get_current_user)],
 ) -> ProjectDTO:
-    try:
-        new_project = await ProjectService.create(
-            project_data=project_data,
-            session=session,
-            redis=redis,
-        )
-        return new_project
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Can not create project"
-        )
+    new_project = await ProjectService.create(
+        project_data=project_data,
+        session=session,
+        redis=redis,
+    )
+    return new_project
 
 
 @project_router.post("/create_many")
@@ -63,18 +54,15 @@ async def create_projects(
     project_data: list[ProjectAddDTO],
     session: SessionDependency,
     redis: RedisDependency,
+    session_header: Annotated[str, Depends(get_current_by_session)],
+    token: Annotated[str, Depends(get_current_user)],
 ) -> list[ProjectDTO]:
-    try:
-        new_projects = await ProjectService.create_many(
-            projects_data=project_data,
-            session=session,
-            redis=redis,
-        )
-        return new_projects
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Can not create projects"
-        )
+    new_projects = await ProjectService.create_many(
+        projects_data=project_data,
+        session=session,
+        redis=redis,
+    )
+    return new_projects
 
 
 @project_router.patch("/update/{project_id}")
@@ -83,19 +71,16 @@ async def update_project(
     project_data: ProjectUpdateDTO,
     session: SessionDependency,
     redis: RedisDependency,
+    session_header: Annotated[str, Depends(get_current_by_session)],
+    token: Annotated[str, Depends(get_current_user)],
 ) -> ProjectDTO:
-    try:
-        updated = await ProjectService.update(
-            project_id=project_id,
-            project_data=project_data,
-            session=session,
-            redis=redis,
-        )
-        return updated
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
-        )
+    updated = await ProjectService.update(
+        project_id=project_id,
+        project_data=project_data,
+        session=session,
+        redis=redis,
+    )
+    return updated
 
 
 @project_router.delete("/delete/{project_id}")
@@ -103,15 +88,12 @@ async def delete_project(
     project_id: int,
     session: SessionDependency,
     redis: RedisDependency,
+    session_header: Annotated[str, Depends(get_current_by_session)],
+    token: Annotated[str, Depends(get_current_user)],
 ) -> ProjectDTO:
-    try:
-        deleted = await ProjectService.delete(
-            project_id=project_id,
-            session=session,
-            redis=redis,
-        )
-        return deleted
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
-        )
+    deleted = await ProjectService.delete(
+        project_id=project_id,
+        session=session,
+        redis=redis,
+    )
+    return deleted

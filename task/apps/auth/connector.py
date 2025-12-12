@@ -25,8 +25,6 @@ class Connector:
     @classmethod
     async def create_user(
         cls, user: UserAddDTO, session: SessionDependency
-    ) -> UserAddDTO | None:
+    ) -> UserAddDTO:
         created = await UserRepository.create(user=user, session=session)
-        if not created:
-            return None
         return UserAddDTO.model_validate(created)

@@ -18,8 +18,6 @@ class ProjectService:
         session: SessionDependency,
     ) -> ProjectRelDto:
         project = await ProjectRepository.get_by_id(id=project_id, session=session)
-        if not project:
-            raise ValueError(f"Project with id {project_id} not found")
         return ProjectRelDto.model_validate(project)
 
     @classmethod
@@ -49,8 +47,6 @@ class ProjectService:
         redis: RedisDependency,
     ) -> ProjectDTO:
         project = await ProjectRepository.create(project=project_data, session=session)
-        if not project:
-            raise ValueError("Can not create project")
         await redis.delete("users:all")
         await redis.delete(f"user:{project.person_in_charge}")
         return ProjectDTO.model_validate(project)
@@ -65,8 +61,6 @@ class ProjectService:
         projects = await ProjectRepository.create_many(
             projects=projects_data, session=session
         )
-        if not projects:
-            raise ValueError("Can not create projects")
         await redis.delete("users:all")
         return [ProjectDTO.model_validate(project) for project in projects]
 
@@ -83,8 +77,6 @@ class ProjectService:
             project=project_data,
             session=session,
         )
-        if not project:
-            raise ValueError(f"Project with id {project_id} not found")
         await redis.delete("users:all")
         await redis.delete(f"user:{project.person_in_charge}")
         return ProjectDTO.model_validate(project)
@@ -97,8 +89,6 @@ class ProjectService:
         redis: RedisDependency,
     ) -> ProjectDTO:
         project = await ProjectRepository.delete(id=project_id, session=session)
-        if not project:
-            raise ValueError(f"Project with id {project_id} not found")
         await redis.delete("users:all")
         await redis.delete(f"user:{project.person_in_charge}")
         return ProjectDTO.model_validate(project)

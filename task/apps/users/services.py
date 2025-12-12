@@ -48,8 +48,6 @@ class UserService:
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Redis error"
             )
         user = await UserRepository.get_by_id(id=user_id, session=session)
-        if not user:
-            raise ValueError(f"User with id {user_id} not found")
         user = UserRelDto.model_validate(user)
         if cached_data is None:
             try:
@@ -81,8 +79,6 @@ class UserService:
         hashed = AuthService.hash_password(user_data.hashed_password)
         user_data.hashed_password = hashed
         user = await UserRepository.create(user=user_data, session=session)
-        if not user:
-            raise ValueError("Can not create user")
         await redis.delete("users:all")
         return UserDTO.model_validate(user)
 
@@ -96,8 +92,6 @@ class UserService:
         for user in users_data:
             user.hashed_password = AuthService.hash_password(user.hashed_password)
         users = await UserRepository.create_many(users=users_data, session=session)
-        if not users:
-            raise ValueError("Can not create users")
         await redis.delete("users:all")
         return [UserDTO.model_validate(user) for user in users]
 
@@ -112,8 +106,6 @@ class UserService:
         user = await UserRepository.update(
             user_id=id, new_user=user_data, session=session
         )
-        if not user:
-            raise ValueError(f"Can not update user on id {id}")
         await redis.delete(f"user:{id}")
         await redis.delete("users:all")
         return UserDTO.model_validate(user)
@@ -126,8 +118,6 @@ class UserService:
         redis: Redis,
     ) -> UserDTO:
         user = await UserRepository.delete(user_id=id, session=session)
-        if not user:
-            raise ValueError(f"Can not delete user on id {id}")
         await redis.delete(f"user:{id}")
         await redis.delete("users:all")
         return UserDTO.model_validate(user)

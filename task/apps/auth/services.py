@@ -1,61 +1,18 @@
-from datetime import datetime, timedelta
 import uuid
-from fastapi import HTTPException, status
-from passlib.context import CryptContext
-from jose import JWTError, jwt
 
 from task.apps.auth.repository import AuthRepository
 from task.apps.auth.schemas import AuthRegisterSchema
-from task.settings.settings import settings
-from task.utils.dependencies import RedisDependency, SessionDependency
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from task.utils.dependencies import RedisDependency, SessionDependency
+from task.utils.exceptions import InvalidCredentialsException
+from task.utils.password_utils import PasswordUtils
+from task.utils.token_utils import TokenUtils
 
 
 class AuthService:
-    @staticmethod
-    def hash_password(password: str) -> str:
-        return pwd_context.hash(password)
-
-    @staticmethod
-    def verify_password(password: str, hashed_password: str) -> bool:
-        return pwd_context.verify(password, hashed_password)
-
-    @staticmethod
-    def create_access_token(data: dict, expires_minutes: int = 30):
-        expire = datetime.now() + timedelta(minutes=expires_minutes)
-        to_encode = data.copy()
-        to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(
-            to_encode, key=settings.SECRET_KEY, algorithm=settings.ALG
-        )
-        return encoded_jwt
-
-    @staticmethod
-    def create_refresh_token(data: dict, expires_days: int = 14):
-        expire = datetime.now() + timedelta(days=expires_days)
-        to_encode = data.copy()
-        to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(
-            to_encode, key=settings.SECRET_KEY, algorithm=settings.ALG
-        )
-        return encoded_jwt
-
-    @staticmethod
-    def decode_token(token: str):
-        try:
-            payload = jwt.decode(
-                token, key=settings.SECRET_KEY, algorithms=settings.ALG
-            )
-            return payload
-        except JWTError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-            )
-
     @classmethod
     async def register(cls, data: AuthRegisterSchema, session: SessionDependency):
-        data.password = cls.hash_password(data.password)
+        data.password = PasswordUtils.hash_password(data.password)
         return await AuthRepository.register_user(data=data, session=session)
 
     @classmethod
@@ -67,16 +24,14 @@ class AuthService:
         redis: RedisDependency,
     ):
         user = await AuthRepository.get_by_username(username=username, session=session)
-        if not user or not cls.verify_password(password, user.hashed_password):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
-            )
+        if not PasswordUtils.verify_password(password, user.hashed_password):
+            raise InvalidCredentialsException
         session_id = str(uuid.uuid4())
         await redis.set(f"session:{session_id}", user.username, ex=600)
 
         payload = {"sub": user.username, "email": user.email}
-        access_token = cls.create_access_token(payload)
-        refresh_token = cls.create_refresh_token(payload)
+        access_token = TokenUtils.create_access_token(payload)
+        refresh_token = TokenUtils.create_refresh_token(payload)
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,

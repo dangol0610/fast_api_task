@@ -64,6 +64,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    volumes:
+      - .:/app
     networks:
       - backend
   
@@ -74,6 +76,8 @@ services:
     depends_on:
       redis:
        condition: service_healthy
+    volumes:
+      - .:/app
     networks:
       - backend
   
@@ -90,6 +94,8 @@ services:
         condition: service_healthy
       worker:
         condition: service_started  
+    volumes:
+      - .:/app
     networks:
       - backend
 

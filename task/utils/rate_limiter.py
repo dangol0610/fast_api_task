@@ -1,12 +1,13 @@
 from fastapi import Request
 from fastapi.responses import JSONResponse
+from task.utils.dependencies import redis_client
 
 
 async def rate_limiter_middleware(
     request: Request,
     call_next,
 ):
-    redis = request.app.state.redis
+    redis = redis_client
     max_requests = 10
     time_window = 60
     client_ip = request.client.host
